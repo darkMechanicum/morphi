@@ -2,6 +2,7 @@ package main
 
 import (
 	"../lexer"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,8 +12,13 @@ import (
 )
 
 func main() {
-	log.SetFlags(0)
-	log.SetOutput(ioutil.Discard)
+	logEnabled := flag.Bool("l", false, "enables logging")
+	flag.Parse()
+
+	if !*logEnabled {
+		log.SetFlags(0)
+		log.SetOutput(ioutil.Discard)
+	}
 
 	literal := lexer.NewTokenType("literal")
 	plus := lexer.NewTokenType("plus")
