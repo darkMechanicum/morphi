@@ -1,7 +1,7 @@
 package main
 
 import (
-	"./lexer"
+	"../lexer"
 	"fmt"
 	"io"
 	"io/ioutil"
