@@ -1,3 +1,4 @@
 # Ignore idea files.
 **/*.iml
 **/.idea/*
+*.exe
