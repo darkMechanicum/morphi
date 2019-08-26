@@ -1,12 +1,13 @@
 package main
 
 import (
-	"../lexer"
+	"./lexer"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"text/scanner"
 )
@@ -20,18 +21,13 @@ func main() {
 		log.SetOutput(ioutil.Discard)
 	}
 
-	literal := lexer.NewTokenType("literal")
-	plus := lexer.NewTokenType("plus")
-	equal := lexer.NewTokenType("equal")
-	tag := lexer.NewTokenType("tag")
-
-	// Initializae Context
-	lexerContext, err := lexer.NewLexerContext(
-		[]rune{' '},
-		map[string]*lexer.TokenType{"+": plus, "=": equal},
-		map[string]*lexer.TokenType{"<.>": tag},
-		literal)
-
+	// Initialize Context
+	cfgReader := lexer.YmlLexerConfigReader{}
+	file, err := os.Open("C:/workspace/projects/go/src/github.com/darkMechanicum/morphi/resources/simple_lex.yml")
+	if err != nil {
+		panic(err)
+	}
+	lexerConfig, err := cfgReader.ReadConfig(file)
 	if err != nil {
 		panic(err)
 	}
@@ -41,7 +37,7 @@ func main() {
 	runes := startReading(input)
 
 	// Initialize StateMachine
-	stateMachine, tokens := lexer.NewLexerStateMachine(runes, lexerContext)
+	stateMachine, tokens := lexer.NewLexerStateMachine(runes, lexerConfig)
 	startWriting(tokens)
 	for cnt, err := stateMachine.TryGetToken(); cnt; cnt, err = stateMachine.TryGetToken() {
 		if err != nil {
@@ -66,7 +62,7 @@ func startReading(reader io.Reader) <-chan rune {
 func startWriting(tokens <-chan *lexer.Token) {
 	go func() {
 		for token := range tokens {
-			fmt.Printf("%s\n", string(*token.TokenType))
+			fmt.Printf("%s (%s)\n", string(*token.TokenType), *token.Content)
 		}
 	}()
 }
