@@ -1,9 +1,9 @@
 package main
 
 import (
-	"./lexer"
-	"./utils"
 	"fmt"
+	"github.com/darkMechanicum/morphi/lexer"
+	"github.com/darkMechanicum/morphi/utils"
 	"os"
 )
 

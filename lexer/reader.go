@@ -1,8 +1,8 @@
 package lexer
 
 import (
-	"../utils"
 	"errors"
+	"github.com/darkMechanicum/morphi/utils"
 	"gopkg.in/yaml.v2"
 	"io"
 	"os"
