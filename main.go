@@ -2,39 +2,26 @@ package main
 
 import (
 	"./lexer"
-	"flag"
+	"./utils"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
 	"os"
-	"strings"
-	"text/scanner"
 )
 
 func main() {
-	logEnabled := flag.Bool("l", false, "enables logging")
-	flag.Parse()
-
-	if !*logEnabled {
-		log.SetFlags(0)
-		log.SetOutput(ioutil.Discard)
-	}
+	utils.InitLogging()
 
 	// Initialize Context
-	cfgReader := lexer.YmlLexerConfigReader{}
-	file, err := os.Open("C:/workspace/projects/go/src/github.com/darkMechanicum/morphi/resources/simple_lex.yml")
-	if err != nil {
-		panic(err)
-	}
-	lexerConfig, err := cfgReader.ReadConfig(file)
+	lexerConfig, err := lexer.ReadLexerConfigFromYmlFile("C:/workspace/projects/go/src/github.com/darkMechanicum/morphi/resources/simple_lex.yml")
 	if err != nil {
 		panic(err)
 	}
 
 	// Initialize the reader
-	input := strings.NewReader("one + three = four <?>")
-	runes := startReading(input)
+	sample, err := os.Open("C:/workspace/projects/go/src/github.com/darkMechanicum/morphi/resources/sample.txt")
+	runes := utils.FromReader(sample)
+	if err != nil {
+		panic(err)
+	}
 
 	// Initialize StateMachine
 	stateMachine, tokens := lexer.NewLexerStateMachine(runes, lexerConfig)
@@ -44,19 +31,6 @@ func main() {
 			panic(err)
 		}
 	}
-}
-
-func startReading(reader io.Reader) <-chan rune {
-	readerChan := make(chan rune) // explicitly set buffer size to 1
-	go func() {
-		var s scanner.Scanner
-		s.Init(reader)
-		for current := s.Next(); current != scanner.EOF; current = s.Next() {
-			readerChan <- current
-		}
-		close(readerChan)
-	}()
-	return readerChan
 }
 
 func startWriting(tokens <-chan *lexer.Token) {

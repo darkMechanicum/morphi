@@ -1,6 +1,14 @@
 delimiters:
     space: " "
+predefined:
+    squareOpenBracket: "["
+    squareCloseBracket: "]"
+    curlyOpenBracket: "{"
+    curlyCloseBracket: "}"
+    commonOpenBracket: "("
+    commonCloseBracket: ")"
 regexp:
     sign: "^[+-/=*]"
     tag: "^<.>"
     literal: "^[a-zA-Z]+"
+    number: "^[0-9]+"

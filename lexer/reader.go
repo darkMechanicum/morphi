@@ -1,13 +1,16 @@
 package lexer
 
 import (
+	"../utils"
 	"errors"
-	"github.com/darkMechanicum/morphi/utils"
 	"gopkg.in/yaml.v2"
 	"io"
+	"os"
 )
 
+// Interface to read lexer config from file.
 type LexerConfigReader interface {
+	// Read LexerConfig from specified file.
 	ReadConfig(r io.Reader) (*LexerConfig, error)
 }
 
@@ -18,6 +21,8 @@ type YmlLexerConfigStructure struct {
 	Regexp     map[string]string
 }
 
+// YmlLexerConfigReader is LexerConfigReader implementation
+// for reading yml files. Contains no state.
 type YmlLexerConfigReader struct {
 }
 
@@ -51,4 +56,18 @@ func (self *YmlLexerConfigReader) ReadConfig(r io.Reader) (*LexerConfig, error) 
 			predefined,
 			regexp)
 	}
+}
+
+// Read lexer config from yml file.
+func ReadLexerConfigFromYmlFile(path string) (*LexerConfig, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	cfgReader := YmlLexerConfigReader{}
+	lexerConfig, err := cfgReader.ReadConfig(file)
+	if err != nil {
+		return nil, err
+	}
+	return lexerConfig, nil
 }
