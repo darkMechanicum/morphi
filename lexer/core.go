@@ -2,6 +2,7 @@ package lexer
 
 import (
 	"fmt"
+	"io"
 )
 
 // Generic Token type.
@@ -17,18 +18,6 @@ type Token interface {
 
 	// Token's type
 	Type() TokenType
-}
-
-// Abstract interface for anything that can
-// get runes.
-type RuneReader interface {
-
-	// Get next rune, or I/O error. If no rune is available,
-	// then nil is returned.
-	NextRune() (*rune, error)
-
-	// Add some runes back to reader.
-	PushBack(runes string)
 }
 
 // Generic Lexer interface type.
@@ -52,13 +41,19 @@ type Lexer interface {
 // patterns.
 type TokenPattern interface {
 	// Does pattern match passed string.
-	// Matches from the begining.
+	// Matches from the beginning.
 	// Returns -1 if pattern not found.
 	Matches(content string) int
 
 	// Does all matches of current pattern will include
 	// matches of passed pattern.
 	Includes(*TokenPattern) bool
+}
+
+// Struct that holds TokenPattern with its matching TokenType.
+type TokenPatternHolder struct {
+	pattern TokenPattern
+	tType   TokenType
 }
 
 // Acts like TokenPattern but matches from the end,
@@ -78,21 +73,21 @@ type DelimiterMatcher interface {
 }
 
 // Generic lexer config.
-type LexerConfig interface {
+type LexerConfig struct {
 	// All delimiters, aggregated in single matcher, since
 	// they do not produce any token.
-	Delimiters() DelimiterMatcher
+	Delimiters DelimiterMatcher
 
 	// Fixed tokens.
-	FixedTokenTypes() map[string]TokenType
+	FixedTokenTypes map[string]TokenType
 
 	// Token patterns.
-	PatternTokenTypes() map[TokenPattern]TokenType
+	PatternTokenTypes []TokenPatternHolder
 }
 
 // Generic lexer config reader.
 type LexerConfigReader interface {
 
 	// Read lexer config from any source.
-	ReadConfig() LexerConfig
+	ReadConfig(r io.Reader) (*LexerConfig, error)
 }

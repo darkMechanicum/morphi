@@ -8,12 +8,6 @@ import (
 	"os"
 )
 
-// Interface to read lexer config from file.
-type LexerConfigReader interface {
-	// Read LexerConfig from specified file.
-	ReadConfig(r io.Reader) (*LexerConfig, error)
-}
-
 // Structure of a predefined yml lexer config file
 type YmlLexerConfigStructure struct {
 	Delimiters map[string]string
@@ -42,16 +36,16 @@ func (self *YmlLexerConfigReader) ReadConfig(r io.Reader) (*LexerConfig, error) 
 			}
 			delimiters = append(delimiters, delimiter)
 		}
-		predefined := make(map[string]*TokenType)
+		predefined := make(map[string]TokenType)
 		for rawTType, value := range t.Predefined {
-			predefined[value] = NewTokenType(rawTType)
+			predefined[value] = NewDefaultTokenType(rawTType)
 		}
-		regexp := make(map[string]*TokenType)
+		regexp := make(map[string]TokenType)
 		for rawTType, value := range t.Regexp {
-			regexp[value] = NewTokenType(rawTType)
+			regexp[value] = NewDefaultTokenType(rawTType)
 		}
 
-		return NewLexerConfig(
+		return NewDefaultLexerConfig(
 			delimiters,
 			predefined,
 			regexp)

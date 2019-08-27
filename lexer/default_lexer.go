@@ -1,11 +1,14 @@
 package lexer
 
-import "strings"
+import (
+	"github.com/darkMechanicum/morphi/readers"
+	"strings"
+)
 
-// DefaultLexer holds current lexer processing state,
+// defaultLexer holds current lexer processing state,
 // such as context, current captured string, channels for ready tokens and
 // available runes, etc.
-type DefaultLexer struct {
+type defaultLexer struct {
 	// Are there more runes, or last one had been read.
 	isEnd bool
 
@@ -14,23 +17,28 @@ type DefaultLexer struct {
 	currentBulk string
 
 	// Available runes for processing
-	runeReader RuneReader
+	runeReader readers.RuneReader
 
 	// Lexer config that is currently in use
-	cfg LexerConfig
+	cfg *LexerConfig
 
 	// Captured error
 	curErr LexerError
 }
 
+// Create new default lexer.
+func NewDefaultLexer(cfg *LexerConfig, runeReader readers.RuneReader) Lexer {
+	return &defaultLexer{false, "", runeReader, cfg, nil}
+}
+
 // Determine if delimiter ends at some point at passed string.
-func (lexer *DefaultLexer) getDelimiterEndIndex(bulkCandidate string) int {
+func (lexer *defaultLexer) getDelimiterEndIndex(bulkCandidate string) int {
 	// If there is non empty error or end, then return.
 	switch {
 	case lexer.curErr != nil:
 		return -1
 	case lexer.isEnd:
-		interval := lexer.cfg.Delimiters().FullMatch(bulkCandidate)
+		interval := lexer.cfg.Delimiters.FullMatch(bulkCandidate)
 		if interval != nil {
 			return interval[1]
 		} else {
@@ -39,7 +47,7 @@ func (lexer *DefaultLexer) getDelimiterEndIndex(bulkCandidate string) int {
 	}
 
 	// Perform delimiters matching.
-	interval := lexer.cfg.Delimiters().MayMatch(bulkCandidate)
+	interval := lexer.cfg.Delimiters.MayMatch(bulkCandidate)
 	switch {
 	case interval == nil:
 		// Can happen, for example, if we read "/" first and threat it like delimiter start
@@ -48,19 +56,19 @@ func (lexer *DefaultLexer) getDelimiterEndIndex(bulkCandidate string) int {
 	case interval[0] == 0 && interval[1] == len(bulkCandidate):
 		return len(bulkCandidate) // TODO what shall we do when interval[0] is not zero?
 	default:
-		interval := lexer.cfg.Delimiters().FullMatch(bulkCandidate)
+		interval := lexer.cfg.Delimiters.FullMatch(bulkCandidate)
 		return interval[1]
 	}
 }
 
 // Determine if delimiter starts at some point at passed string.
-func (lexer *DefaultLexer) getDelimiterStartIndex(bulkCandidate string) int {
+func (lexer *defaultLexer) getDelimiterStartIndex(bulkCandidate string) int {
 	// If there is non empty error or end, then return.
 	switch {
 	case lexer.curErr != nil:
 		return -1
 	case lexer.isEnd:
-		interval := lexer.cfg.Delimiters().FullMatch(bulkCandidate)
+		interval := lexer.cfg.Delimiters.FullMatch(bulkCandidate)
 		if interval != nil {
 			return interval[0]
 		} else {
@@ -69,19 +77,19 @@ func (lexer *DefaultLexer) getDelimiterStartIndex(bulkCandidate string) int {
 	}
 
 	// Perform delimiters matching.
-	interval := lexer.cfg.Delimiters().MayMatch(bulkCandidate)
+	interval := lexer.cfg.Delimiters.MayMatch(bulkCandidate)
 	switch {
 	case interval == nil:
 		return len(bulkCandidate)
 	default:
-		interval := lexer.cfg.Delimiters().FullMatch(bulkCandidate)
+		interval := lexer.cfg.Delimiters.FullMatch(bulkCandidate)
 		return interval[0]
 	}
 }
 
 // Read next bulk if need. Bulk is non delimiter string from
 // rune reader.
-func (lexer *DefaultLexer) readBulkIfNeed() {
+func (lexer *defaultLexer) readBulkIfNeed() {
 	// If there is non empty error or bulk, then return.
 	switch {
 	case lexer.curErr != nil:
@@ -141,7 +149,7 @@ func (lexer *DefaultLexer) readBulkIfNeed() {
 }
 
 // See interface description.
-func (lexer *DefaultLexer) DropBulk() {
+func (lexer *defaultLexer) DropBulk() {
 	switch {
 	case lexer.curErr != nil:
 		return
@@ -154,7 +162,7 @@ func (lexer *DefaultLexer) DropBulk() {
 }
 
 // See interface description.
-func (lexer *DefaultLexer) NextToken() Token {
+func (lexer *defaultLexer) NextToken() Token {
 	switch {
 	case lexer.curErr != nil:
 		return nil
@@ -174,13 +182,13 @@ func (lexer *DefaultLexer) NextToken() Token {
 }
 
 // See interface description.
-func (lexer *DefaultLexer) CurrentError() LexerError {
+func (lexer *defaultLexer) CurrentError() LexerError {
 	return lexer.curErr
 }
 
 // Try get fixed token.
-func (lexer *DefaultLexer) greedyMatchFixedToken() Token {
-	for fixedToken, tType := range lexer.cfg.FixedTokenTypes() {
+func (lexer *defaultLexer) greedyMatchFixedToken() Token {
+	for fixedToken, tType := range lexer.cfg.FixedTokenTypes {
 		if strings.HasPrefix(lexer.currentBulk, fixedToken) {
 			lexer.currentBulk = lexer.currentBulk[len(fixedToken):]
 			return &DefaultToken{fixedToken, tType}
@@ -190,14 +198,14 @@ func (lexer *DefaultLexer) greedyMatchFixedToken() Token {
 }
 
 // Try get pattern token.
-func (lexer *DefaultLexer) greedyMatchPatternToken() (Token, error) {
+func (lexer *defaultLexer) greedyMatchPatternToken() (Token, error) {
 	var chosenType TokenType
 	var chosenIndex int
-	for tokenPattern, tType := range lexer.cfg.PatternTokenTypes() {
-		if matchIndex := tokenPattern.Matches(lexer.currentBulk); matchIndex > 0 {
+	for _, holder := range lexer.cfg.PatternTokenTypes {
+		if matchIndex := holder.pattern.Matches(lexer.currentBulk); matchIndex > 0 {
 			if chosenType == nil || chosenIndex < matchIndex {
 				chosenIndex = matchIndex
-				chosenType = tType
+				chosenType = holder.tType
 			} else if chosenIndex == matchIndex {
 				return nil, &AmbiguousTokenPattersMatch{}
 			}

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/darkMechanicum/morphi/lexer"
+	"github.com/darkMechanicum/morphi/readers"
 	"github.com/darkMechanicum/morphi/utils"
 	"os"
 )
@@ -18,25 +19,17 @@ func main() {
 
 	// Initialize the reader
 	sample, err := os.Open("C:/workspace/projects/go/src/github.com/darkMechanicum/morphi/resources/sample.txt")
-	runes := utils.FromReader(sample)
+	runeReader := readers.NewDefaultReader(sample)
 	if err != nil {
 		panic(err)
 	}
 
 	// Initialize StateMachine
-	stateMachine, tokens := lexer.NewLexerStateMachine(runes, lexerConfig)
-	startWriting(tokens)
-	for cnt, err := stateMachine.TryGetToken(); cnt; cnt, err = stateMachine.TryGetToken() {
-		if err != nil {
-			panic(err)
-		}
+	lexer := lexer.NewDefaultLexer(lexerConfig, runeReader)
+	for token := lexer.NextToken(); token != nil; token = lexer.NextToken() {
+		fmt.Printf("%s (%s)\n", token.Type().String(), token.Content())
 	}
-}
-
-func startWriting(tokens <-chan *lexer.Token) {
-	go func() {
-		for token := range tokens {
-			fmt.Printf("%s (%s)\n", string(*token.TokenType), *token.Content)
-		}
-	}()
+	if lexer.CurrentError() != nil {
+		panic(lexer.CurrentError())
+	}
 }
