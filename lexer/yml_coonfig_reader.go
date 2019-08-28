@@ -1,8 +1,6 @@
 package lexer
 
 import (
-	"errors"
-	"github.com/darkMechanicum/morphi/utils"
 	"gopkg.in/yaml.v2"
 	"io"
 	"os"
@@ -10,9 +8,7 @@ import (
 
 // Structure of a predefined yml lexer config file
 type YmlLexerConfigStructure struct {
-	Delimiters map[string]string
-	Predefined map[string]string
-	Regexp     map[string]string
+	Tokens map[string]string
 }
 
 // YmlLexerConfigReader is LexerConfigReader implementation
@@ -27,28 +23,12 @@ func (self *YmlLexerConfigReader) ReadConfig(r io.Reader) (*LexerConfig, error) 
 	if err != nil {
 		return nil, err
 	} else {
-		delimiters := make([]rune, 0, len(t.Delimiters))
-		for _, delimiterStr := range t.Delimiters {
-			delimiter, err := utils.GetOnlyRune(&delimiterStr)
-			if err != nil {
-				return nil, errors.New("Can't read lexer config because delimiter string is empty " +
-					"or contains more than one character.")
-			}
-			delimiters = append(delimiters, delimiter)
-		}
-		predefined := make(map[string]TokenType)
-		for rawTType, value := range t.Predefined {
-			predefined[value] = NewDefaultTokenType(rawTType)
-		}
 		regexp := make(map[string]TokenType)
-		for rawTType, value := range t.Regexp {
+		for rawTType, value := range t.Tokens {
 			regexp[value] = NewDefaultTokenType(rawTType)
 		}
 
-		return NewDefaultLexerConfig(
-			delimiters,
-			predefined,
-			regexp)
+		return NewDefaultLexerConfig(regexp)
 	}
 }
 

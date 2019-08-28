@@ -1,13 +1,9 @@
-delimiters:
-    space: " "
-predefined:
-    squareOpenBracket: "["
-    squareCloseBracket: "]"
-    curlyOpenBracket: "{"
-    curlyCloseBracket: "}"
-    commonOpenBracket: "("
-    commonCloseBracket: ")"
-regexp:
+tokens:
+    square_brace: "^[\\[\\]]"
+    brace: "^[)(]"
+    curly_brace: "^[\\{\\}]"
+    spacing: "^[ \n]+"
+    single_line_comment: "^//.*(\r|\r\n)?"
     sign: "^[+-/=*]"
     tag: "^<.>"
     literal: "^[a-zA-Z]+"

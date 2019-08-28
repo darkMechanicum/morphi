@@ -6,7 +6,7 @@ type DefaultTokenType string
 
 // Stringer implementation for DefaultTokenType.
 func (self *DefaultTokenType) String() string {
-	return self.String()
+	return string(*self)
 }
 
 // Create and register new Token type.

@@ -5,43 +5,7 @@ import (
 	"regexp"
 )
 
-type runeSliceDelimiterMatcher struct {
-	delimiters map[rune]rune
-}
-
-func NewRuneSliceDelimiterMatcher(runes []rune) DelimiterMatcher {
-	newMap := make(map[rune]rune)
-	for _, rn := range runes {
-		newMap[rn] = rn
-	}
-	return &runeSliceDelimiterMatcher{newMap}
-}
-
-func (matcher *runeSliceDelimiterMatcher) doMatch(content string) []int {
-	startIndex := -1
-	for index, value := range content {
-		_, exist := matcher.delimiters[value]
-		switch {
-		case exist && startIndex == -1:
-			startIndex = index
-		case !exist && startIndex != -1:
-			return []int{startIndex, index}
-		}
-	}
-	return nil
-}
-
-func (matcher *runeSliceDelimiterMatcher) MayMatch(content string) []int {
-	return matcher.doMatch(content)
-}
-
-func (matcher *runeSliceDelimiterMatcher) FullMatch(content string) []int {
-	return matcher.doMatch(content)
-}
-
-func (matcher *runeSliceDelimiterMatcher) Includes(*DelimiterMatcher) bool {
-	return false
-}
+// --- Tokens Token Pattern ---
 
 type regexpTokenPattern struct {
 	rawRegexp string
@@ -57,12 +21,12 @@ func NewRegexpTokenPattern(raw string) (TokenPattern, error) {
 	}
 }
 
-func (pattern *regexpTokenPattern) Matches(content string) int {
+func (pattern *regexpTokenPattern) Matches(content string) *Interval {
 	matchIndexes := pattern.regexp.FindStringIndex(content)
-	if matchIndexes == nil || matchIndexes[0] != 0 || matchIndexes[0] == matchIndexes[1] {
-		return -1
+	if matchIndexes == nil {
+		return nil
 	} else {
-		return matchIndexes[1]
+		return &Interval{matchIndexes[0], matchIndexes[1]}
 	}
 }
 
@@ -72,12 +36,10 @@ func (pattern *regexpTokenPattern) Includes(*TokenPattern) bool {
 
 // Create new LexerConfig by baking regexps.
 func NewDefaultLexerConfig(
-	delimiters []rune,
-	fixedTokenTypes map[string]TokenType,
 	regexTokenTypes map[string]TokenType,
 ) (*LexerConfig, error) {
 	// bake regexps
-	bakedRegexps := make([]TokenPatternHolder, 10)
+	bakedRegexps := make([]TokenPatternHolder, 0)
 	for rawRegexp, tType := range regexTokenTypes {
 		baked, err := NewRegexpTokenPattern(rawRegexp)
 		if err != nil {
@@ -86,11 +48,6 @@ func NewDefaultLexerConfig(
 		holder := TokenPatternHolder{baked, tType}
 		bakedRegexps = append(bakedRegexps, holder)
 	}
-	// bake delimiters
-	delimitersMatcher := NewRuneSliceDelimiterMatcher(delimiters)
 	// return created context
-	return &LexerConfig{
-		delimitersMatcher,
-		fixedTokenTypes,
-		bakedRegexps}, nil
+	return &LexerConfig{bakedRegexps}, nil
 }

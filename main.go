@@ -6,6 +6,7 @@ import (
 	"github.com/darkMechanicum/morphi/readers"
 	"github.com/darkMechanicum/morphi/utils"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -25,11 +26,13 @@ func main() {
 	}
 
 	// Initialize StateMachine
-	lexer := lexer.NewDefaultLexer(lexerConfig, runeReader)
-	for token := lexer.NextToken(); token != nil; token = lexer.NextToken() {
-		fmt.Printf("%s (%s)\n", token.Type().String(), token.Content())
+	lex := lexer.NewDefaultLexer(lexerConfig, runeReader)
+	for token := lex.NextToken(); token != nil; token = lex.NextToken() {
+		escapedContent := strings.ReplaceAll(token.Content(), "\r", "")
+		escapedContent = strings.ReplaceAll(escapedContent, "\n", "")
+		fmt.Printf("%s (%s)\n", token.Type().String(), escapedContent)
 	}
-	if lexer.CurrentError() != nil {
-		panic(lexer.CurrentError())
+	if lex.CurrentError() != nil {
+		panic(lex.CurrentError())
 	}
 }

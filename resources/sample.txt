@@ -1,1 +1,1 @@
-first expression is [5+4=8]
+a  [](){} some
